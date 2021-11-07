@@ -12,32 +12,36 @@ const uploadProducts = (payload) => ({
 });
 // ----------------- REDUCERS ------------
 const kdsMainServiceReducer = (state = [], action) => {
+  const parseInfoFunc = (array) => {
+    const arrayToParse = [];
+    array.forEach((e) => {
+      e.order_detail = JSON.parse(e.order_detail);
+      arrayToParse.push(e);
+    });
+    return arrayToParse;
+  };
+
   switch (action.type) {
     case TRIGGER_PRODUCTS:
       return state;
     case UPLOAD_PRODUCTS:
-      return action.payload;
+      return parseInfoFunc(action.payload);
     default:
       return state;
   }
 };
 
 // ---------------- Middlewares and Side Effects --------------
-const fetchOrdersMiddleware = () => (next) => (action) => {
+const fetchOrdersMiddleware = (store) => (next) => (action) => {
   if (action.type === TRIGGER_PRODUCTS) {
-    const myHeaders = new Headers();
-    myHeaders.append('Cookie', 'sid=s%3Aho9ke1YMr9GSnUyJdD1ixSrhXxK1HfCj.DQCnOuVkblXY4uLmmVzwS%2FRww23%2FLP0cAN4Gix8oi6I');
-
-    const requestOptions = {
-      method: 'GET',
-      headers: myHeaders,
-      redirect: 'follow',
-    };
-
-    fetch('https://www.makitperu.com/getlastweekorders', requestOptions)
-      .then((response) => response.text())
-      .then((result) => console.log(result))
-      .catch((error) => console.log('error', error));
+    fetch('https://www.makitperu.com/getlastweekorders', {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Access-Control-Allow-Origin': '*',
+      },
+      cors: 'no-cors',
+    }).then((response) => response.json())
+      .then((json) => store.dispatch(uploadProducts(json)));
   }
   next(action);
 };
